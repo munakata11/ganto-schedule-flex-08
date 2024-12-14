@@ -65,6 +65,57 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
     document.addEventListener('mouseup', handleMouseUp);
   };
 
+  const handleResize = (taskId: string, direction: 'left' | 'right', e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    const taskElement = e.currentTarget.parentElement;
+    const container = taskElement?.parentElement;
+    if (!taskElement || !container) return;
+
+    const startX = e.clientX;
+    const startWidth = taskElement.offsetWidth;
+    const startLeft = taskElement.offsetLeft;
+    const containerWidth = container.offsetWidth;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!taskElement || !container) return;
+
+      const deltaX = moveEvent.clientX - startX;
+      let newWidth, newLeft, newStartDate, newEndDate;
+
+      if (direction === 'right') {
+        newWidth = Math.max(20, Math.min(containerWidth - startLeft, startWidth + deltaX));
+        const daysWidth = Math.floor((newWidth / containerWidth) * 365);
+        newEndDate = new Date(task.startDate.getTime() + daysWidth * 24 * 60 * 60 * 1000);
+        newStartDate = task.startDate;
+      } else {
+        newWidth = Math.max(20, Math.min(startWidth - deltaX, startLeft + startWidth));
+        const newLeftPos = Math.max(0, Math.min(startLeft + deltaX, startLeft + startWidth - 20));
+        const daysFromStart = Math.floor((newLeftPos / containerWidth) * 365);
+        newStartDate = new Date(startDate.getTime() + daysFromStart * 24 * 60 * 60 * 1000);
+        newEndDate = task.endDate;
+      }
+
+      onTaskUpdate({
+        ...task,
+        startDate: newStartDate,
+        endDate: newEndDate,
+      });
+    };
+
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
   return (
     <div className="h-[600px] bg-white rounded-lg shadow p-4">
       <div className="relative h-full">
@@ -98,7 +149,7 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
               return (
                 <div
                   key={task.id}
-                  className="gantt-task absolute h-8 rounded"
+                  className="gantt-task absolute h-8 rounded group"
                   style={{
                     ...position,
                     top: `${index * 48}px`,
@@ -106,6 +157,14 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
                   }}
                   onMouseDown={(e) => handleTaskDrag(task.id, e)}
                 >
+                  <div
+                    className="absolute left-0 top-0 w-1 h-full cursor-ew-resize opacity-0 group-hover:opacity-100 bg-black/20"
+                    onMouseDown={(e) => handleResize(task.id, 'left', e)}
+                  />
+                  <div
+                    className="absolute right-0 top-0 w-1 h-full cursor-ew-resize opacity-0 group-hover:opacity-100 bg-black/20"
+                    onMouseDown={(e) => handleResize(task.id, 'right', e)}
+                  />
                   <span className="px-2 text-white whitespace-nowrap overflow-hidden text-sm">
                     {task.title}
                   </span>
