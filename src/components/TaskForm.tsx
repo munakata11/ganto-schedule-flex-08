@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Task } from '../types/task';
-import { format } from 'date-fns';
 
 interface TaskFormProps {
   onSubmit: (task: Task) => void;
@@ -48,10 +47,10 @@ const TaskForm = ({ onSubmit }: TaskFormProps) => {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          開始日
+          開始日時
         </label>
         <input
-          type="date"
+          type="datetime-local"
           value={startDate}
           onChange={(e) => setStartDate(e.target.value)}
           className="task-input"
@@ -61,10 +60,10 @@ const TaskForm = ({ onSubmit }: TaskFormProps) => {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          終了日
+          終了日時
         </label>
         <input
-          type="date"
+          type="datetime-local"
           value={endDate}
           onChange={(e) => setEndDate(e.target.value)}
           className="task-input"
