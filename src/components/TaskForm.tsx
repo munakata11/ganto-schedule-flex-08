@@ -7,9 +7,10 @@ interface TaskFormProps {
 }
 
 const TaskForm = ({ onSubmit }: TaskFormProps) => {
+  const today = format(new Date(), 'yyyy-MM-dd');
   const [title, setTitle] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [startDate, setStartDate] = useState(today);
+  const [endDate, setEndDate] = useState(today);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,8 +31,8 @@ const TaskForm = ({ onSubmit }: TaskFormProps) => {
 
     onSubmit(task);
     setTitle('');
-    setStartDate('');
-    setEndDate('');
+    setStartDate(today);
+    setEndDate(today);
   };
 
   return (

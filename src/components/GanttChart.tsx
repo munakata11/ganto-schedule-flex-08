@@ -21,6 +21,7 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
   const months = Array.from({ length: 12 }, (_, i) => new Date(currentDate.getFullYear(), i, 1));
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
+  const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
 
   const calculateTaskPosition = (task: Task) => {
     const totalDays = 365;
@@ -36,6 +37,7 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
   const handleTaskDrag = (taskId: string, e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(true);
+    setActiveTaskId(taskId);
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
 
@@ -67,6 +69,7 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
 
     const handleMouseUp = () => {
       setIsDragging(false);
+      setActiveTaskId(null);
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
@@ -79,6 +82,7 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
     e.preventDefault();
     e.stopPropagation();
     setIsResizing(true);
+    setActiveTaskId(taskId);
     
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
@@ -120,6 +124,7 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
 
     const handleMouseUp = () => {
       setIsResizing(false);
+      setActiveTaskId(null);
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
@@ -158,9 +163,10 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
           <div className="absolute inset-0">
             {tasks.map((task, index) => {
               const position = calculateTaskPosition(task);
+              const isActive = task.id === activeTaskId;
               return (
                 <TooltipProvider key={task.id}>
-                  <Tooltip open={isDragging || isResizing || undefined}>
+                  <Tooltip open={isActive && (isDragging || isResizing)}>
                     <TooltipTrigger asChild>
                       <div
                         className="gantt-task absolute h-8 rounded group"
