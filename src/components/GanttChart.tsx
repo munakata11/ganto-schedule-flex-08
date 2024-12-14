@@ -19,6 +19,8 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
   const startDate = new Date(currentDate.getFullYear(), 0, 1);
   const endDate = new Date(currentDate.getFullYear(), 11, 31);
   const months = Array.from({ length: 12 }, (_, i) => new Date(currentDate.getFullYear(), i, 1));
+  const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
 
   const calculateTaskPosition = (task: Task) => {
     const totalDays = 365;
@@ -33,6 +35,7 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
 
   const handleTaskDrag = (taskId: string, e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
+    setIsDragging(true);
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
 
@@ -63,6 +66,7 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
     };
 
     const handleMouseUp = () => {
+      setIsDragging(false);
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
@@ -74,6 +78,7 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
   const handleResize = (taskId: string, direction: 'left' | 'right', e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
+    setIsResizing(true);
     
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
@@ -114,6 +119,7 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
     };
 
     const handleMouseUp = () => {
+      setIsResizing(false);
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
@@ -154,7 +160,7 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
               const position = calculateTaskPosition(task);
               return (
                 <TooltipProvider key={task.id}>
-                  <Tooltip>
+                  <Tooltip open={isDragging || isResizing || undefined}>
                     <TooltipTrigger asChild>
                       <div
                         className="gantt-task absolute h-8 rounded group"
