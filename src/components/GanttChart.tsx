@@ -73,10 +73,10 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
           endDayHour={24}
           cellDuration={60}
         />
+        <EditRecurrenceMenu />
         <Appointments appointmentComponent={Appointment} />
         <AllDayPanel />
         <DragDropProvider />
-        <EditRecurrenceMenu />
       </Scheduler>
     </div>
   );
