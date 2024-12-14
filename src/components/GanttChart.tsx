@@ -6,7 +6,7 @@ import {
   DragDropProvider,
   EditRecurrenceMenu,
   AllDayPanel,
-  TimelineView,
+  WeekView,
 } from '@devexpress/dx-react-scheduler-material-ui';
 import { ViewState, EditingState } from '@devexpress/dx-react-scheduler';
 import { format } from 'date-fns';
@@ -76,11 +76,11 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
           defaultCurrentDate={startDate}
         />
         <EditingState onCommitChanges={onCommitChanges} />
-        <TimelineView
-          cellDuration={1440} // 1日単位
-          intervalCount={365} // 1年分
-          startDate={startDate}
-          endDate={endDate}
+        <WeekView
+          startDayHour={0}
+          endDayHour={24}
+          cellDuration={1440}
+          intervalCount={52}
         />
         <EditRecurrenceMenu />
         <Appointments appointmentComponent={Appointment} />
