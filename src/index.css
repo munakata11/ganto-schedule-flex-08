@@ -39,7 +39,8 @@
 }
 
 .gantt-task {
-  @apply cursor-pointer transition-all duration-200 ease-in-out;
+  @apply cursor-move transition-all duration-200 ease-in-out;
+  user-select: none;
 }
 
 .gantt-task:hover {

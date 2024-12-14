@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react';
 import { Task } from '../types/task';
-import { format, addMonths, startOfYear, differenceInDays } from 'date-fns';
+import { format, addMonths, startOfYear, differenceInDays, addDays } from 'date-fns';
 import { ja } from 'date-fns/locale';
 
 interface GanttChartProps {
@@ -19,36 +19,60 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
     const container = containerRef.current;
     let activeTask: HTMLElement | null = null;
     let initialX: number = 0;
+    let initialLeft: number = 0;
     let initialWidth: number = 0;
+    let isResizing: boolean = false;
 
     const handleMouseDown = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (target.classList.contains('gantt-task')) {
-        activeTask = target;
-        initialX = e.clientX;
-        initialWidth = target.offsetWidth;
-      }
+      const taskElement = target.closest('.gantt-task') as HTMLElement;
+      
+      if (!taskElement) return;
+      
+      activeTask = taskElement;
+      initialX = e.clientX;
+      initialLeft = parseFloat(taskElement.style.left);
+      initialWidth = taskElement.offsetWidth;
+      
+      // Check if clicking near the right edge (for resizing)
+      const rect = taskElement.getBoundingClientRect();
+      isResizing = e.clientX > rect.right - 10;
     };
 
     const handleMouseMove = (e: MouseEvent) => {
       if (!activeTask) return;
 
+      const containerWidth = container.offsetWidth;
       const diff = e.clientX - initialX;
-      const newWidth = Math.max(50, initialWidth + diff);
-      activeTask.style.width = `${newWidth}px`;
+      const dayWidth = containerWidth / 365;
 
       const taskId = activeTask.getAttribute('data-task-id');
       const task = tasks.find(t => t.id === taskId);
-      if (task) {
-        const daysToAdd = Math.floor(diff / (container.offsetWidth / 365));
-        const newEndDate = new Date(task.endDate);
-        newEndDate.setDate(newEndDate.getDate() + daysToAdd);
+      if (!task) return;
+
+      if (isResizing) {
+        // Resizing logic
+        const newWidth = Math.max(dayWidth * 1, initialWidth + diff); // Minimum 1 day
+        activeTask.style.width = `${newWidth}px`;
+        
+        const daysToAdd = Math.round((newWidth - initialWidth) / dayWidth);
+        const newEndDate = addDays(task.endDate, daysToAdd);
         onTaskUpdate({ ...task, endDate: newEndDate });
+      } else {
+        // Moving logic
+        const newLeft = Math.max(0, Math.min(containerWidth - activeTask.offsetWidth, initialLeft + diff));
+        activeTask.style.left = `${newLeft}px`;
+        
+        const daysDiff = Math.round((newLeft - initialLeft) / dayWidth);
+        const newStartDate = addDays(task.startDate, daysDiff);
+        const newEndDate = addDays(task.endDate, daysDiff);
+        onTaskUpdate({ ...task, startDate: newStartDate, endDate: newEndDate });
       }
     };
 
     const handleMouseUp = () => {
       activeTask = null;
+      isResizing = false;
     };
 
     container.addEventListener('mousedown', handleMouseDown);
@@ -95,7 +119,7 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
               <div
                 key={task.id}
                 data-task-id={task.id}
-                className="gantt-task absolute h-8 rounded"
+                className="gantt-task absolute h-8 rounded cursor-move"
                 style={{
                   ...position,
                   backgroundColor: task.color || 'rgb(14 165 233)',
@@ -105,6 +129,7 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
                 <div className="px-2 py-1 text-white text-sm truncate">
                   {task.title}
                 </div>
+                <div className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize" />
               </div>
             );
           })}
