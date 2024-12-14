@@ -8,6 +8,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface GanttChartProps {
   tasks: Task[];
@@ -15,13 +22,17 @@ interface GanttChartProps {
 }
 
 const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
-  const currentDate = new Date();
-  const startDate = new Date(currentDate.getFullYear(), 0, 1);
-  const endDate = new Date(currentDate.getFullYear(), 11, 31);
-  const months = Array.from({ length: 12 }, (_, i) => new Date(currentDate.getFullYear(), i, 1));
+  const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+  const startDate = new Date(selectedYear, 0, 1);
+  const endDate = new Date(selectedYear, 11, 31);
+  const months = Array.from({ length: 12 }, (_, i) => new Date(selectedYear, i, 1));
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
+
+  // 年度選択のオプションを生成（現在年から前後5年）
+  const yearOptions = Array.from({ length: 11 }, (_, i) => currentYear - 5 + i);
 
   const calculateTaskPosition = (task: Task) => {
     const totalDays = 365;
@@ -135,7 +146,24 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
 
   return (
     <div className="h-[600px] bg-white rounded-lg shadow p-4">
-      <div className="relative h-full">
+      <div className="mb-4">
+        <Select
+          value={selectedYear.toString()}
+          onValueChange={(value) => setSelectedYear(parseInt(value))}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="年度を選択" />
+          </SelectTrigger>
+          <SelectContent>
+            {yearOptions.map((year) => (
+              <SelectItem key={year} value={year.toString()}>
+                {year}年度
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="relative h-[calc(100%-3rem)]">
         {/* Month Headers */}
         <div className="flex border-b border-gray-200">
           {months.map((month) => (
