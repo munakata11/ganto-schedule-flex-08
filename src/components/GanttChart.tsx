@@ -22,6 +22,7 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
     let initialLeft: number = 0;
     let initialWidth: number = 0;
     let isResizing: boolean = false;
+    let isResizingLeft: boolean = false;
 
     const handleMouseDown = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
@@ -34,8 +35,9 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
       initialLeft = parseFloat(taskElement.style.left);
       initialWidth = taskElement.offsetWidth;
       
-      // Check if clicking near the right edge (for resizing)
+      // Check if clicking near the edges (for resizing)
       const rect = taskElement.getBoundingClientRect();
+      isResizingLeft = e.clientX < rect.left + 10;
       isResizing = e.clientX > rect.right - 10;
     };
 
@@ -50,9 +52,21 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
       const task = tasks.find(t => t.id === taskId);
       if (!task) return;
 
-      if (isResizing) {
-        // Resizing logic
-        const newWidth = Math.max(dayWidth * 1, initialWidth + diff); // Minimum 1 day
+      if (isResizingLeft) {
+        // Left resize logic
+        const maxLeftMove = initialLeft + initialWidth - dayWidth; // Ensure minimum width
+        const newLeft = Math.max(0, Math.min(maxLeftMove, initialLeft + diff));
+        const newWidth = initialWidth - (newLeft - initialLeft);
+        
+        activeTask.style.left = `${newLeft}px`;
+        activeTask.style.width = `${newWidth}px`;
+        
+        const daysDiff = Math.round((newLeft - initialLeft) / dayWidth);
+        const newStartDate = addDays(task.startDate, daysDiff);
+        onTaskUpdate({ ...task, startDate: newStartDate });
+      } else if (isResizing) {
+        // Right resize logic
+        const newWidth = Math.max(dayWidth, initialWidth + diff);
         activeTask.style.width = `${newWidth}px`;
         
         const daysToAdd = Math.round((newWidth - initialWidth) / dayWidth);
@@ -73,6 +87,7 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
     const handleMouseUp = () => {
       activeTask = null;
       isResizing = false;
+      isResizingLeft = false;
     };
 
     container.addEventListener('mousedown', handleMouseDown);
@@ -119,7 +134,7 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
               <div
                 key={task.id}
                 data-task-id={task.id}
-                className="gantt-task absolute h-8 rounded cursor-move"
+                className="gantt-task absolute h-8 rounded"
                 style={{
                   ...position,
                   backgroundColor: task.color || 'rgb(14 165 233)',
@@ -129,6 +144,7 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
                 <div className="px-2 py-1 text-white text-sm truncate">
                   {task.title}
                 </div>
+                <div className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize" />
                 <div className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize" />
               </div>
             );
