@@ -2,12 +2,11 @@ import { useEffect, useState } from 'react';
 import { Task } from '../types/task';
 import {
   Scheduler,
-  WeekView,
   Appointments,
   DragDropProvider,
   EditRecurrenceMenu,
   AllDayPanel,
-  MonthView,
+  TimelineView,
 } from '@devexpress/dx-react-scheduler-material-ui';
 import { ViewState, EditingState } from '@devexpress/dx-react-scheduler';
 import { format } from 'date-fns';
@@ -74,11 +73,14 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
         firstDayOfWeek={1}
       >
         <ViewState 
-          defaultCurrentDate={currentDate}
+          defaultCurrentDate={startDate}
         />
         <EditingState onCommitChanges={onCommitChanges} />
-        <MonthView
-          intervalCount={12}
+        <TimelineView
+          cellDuration={1440} // 1日単位
+          intervalCount={365} // 1年分
+          startDate={startDate}
+          endDate={endDate}
         />
         <EditRecurrenceMenu />
         <Appointments appointmentComponent={Appointment} />
