@@ -26,19 +26,23 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
   };
 
   const handleTaskDrag = (taskId: string, e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
 
-    const container = e.currentTarget.parentElement;
+    const taskElement = e.currentTarget;
+    const container = taskElement.parentElement;
     if (!container) return;
 
     const startX = e.clientX;
-    const startLeft = e.currentTarget.offsetLeft;
-    const containerWidth = container.clientWidth;
+    const startLeft = taskElement.offsetLeft;
+    const containerWidth = container.offsetWidth;
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!taskElement || !container) return;
+      
       const deltaX = moveEvent.clientX - startX;
-      const newLeft = Math.max(0, Math.min(containerWidth - e.currentTarget.offsetWidth, startLeft + deltaX));
+      const newLeft = Math.max(0, Math.min(containerWidth - taskElement.offsetWidth, startLeft + deltaX));
       const daysFromStart = Math.floor((newLeft / containerWidth) * 365);
       
       const newStartDate = new Date(startDate.getTime() + daysFromStart * 24 * 60 * 60 * 1000);
