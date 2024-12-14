@@ -35,17 +35,19 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
       initialLeft = parseFloat(taskElement.style.left);
       initialWidth = taskElement.offsetWidth;
       
-      // Check if clicking near the edges (for resizing)
+      // リサイズハンドル（左右10px）の判定を厳密に行う
       const rect = taskElement.getBoundingClientRect();
-      isResizingLeft = e.clientX < rect.left + 10;
-      isResizing = e.clientX > rect.right - 10;
+      const isLeftHandle = target.classList.contains('resize-handle-left');
+      const isRightHandle = target.classList.contains('resize-handle-right');
+      isResizingLeft = isLeftHandle || (!isRightHandle && e.clientX < rect.left + 10);
+      isResizing = isRightHandle || (!isLeftHandle && e.clientX > rect.right - 10);
     };
 
     const handleMouseMove = (e: MouseEvent) => {
       if (!activeTask) return;
 
       const containerWidth = container.offsetWidth;
-      const diff = e.clientX - initialX;
+      const diff = (e.clientX - initialX) * 0.5; // 移動量を半分に抑える
       const dayWidth = containerWidth / 365;
 
       const taskId = activeTask.getAttribute('data-task-id');
@@ -53,10 +55,10 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
       if (!task) return;
 
       if (isResizingLeft) {
-        // Left resize logic
-        const maxLeftMove = initialLeft + initialWidth - dayWidth; // Ensure minimum width
+        // 左端のリサイズ処理
+        const maxLeftMove = initialLeft + initialWidth - dayWidth;
         const newLeft = Math.max(0, Math.min(maxLeftMove, initialLeft + diff));
-        const newWidth = initialWidth - (newLeft - initialLeft);
+        const newWidth = Math.max(dayWidth, initialWidth - (newLeft - initialLeft));
         
         activeTask.style.left = `${newLeft}px`;
         activeTask.style.width = `${newWidth}px`;
@@ -65,7 +67,7 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
         const newStartDate = addDays(task.startDate, daysDiff);
         onTaskUpdate({ ...task, startDate: newStartDate });
       } else if (isResizing) {
-        // Right resize logic
+        // 右端のリサイズ処理
         const newWidth = Math.max(dayWidth, initialWidth + diff);
         activeTask.style.width = `${newWidth}px`;
         
@@ -73,7 +75,7 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
         const newEndDate = addDays(task.endDate, daysToAdd);
         onTaskUpdate({ ...task, endDate: newEndDate });
       } else {
-        // Moving logic
+        // タスクの移動処理
         const newLeft = Math.max(0, Math.min(containerWidth - activeTask.offsetWidth, initialLeft + diff));
         activeTask.style.left = `${newLeft}px`;
         
@@ -144,8 +146,8 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
                 <div className="px-2 py-1 text-white text-sm truncate">
                   {task.title}
                 </div>
-                <div className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize" />
-                <div className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize" />
+                <div className="resize-handle-left absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize" />
+                <div className="resize-handle-right absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize" />
               </div>
             );
           })}
