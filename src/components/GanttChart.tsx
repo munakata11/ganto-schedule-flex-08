@@ -6,10 +6,11 @@ import {
   DragDropProvider,
   EditRecurrenceMenu,
   AllDayPanel,
-  WeekView,
+  MonthView,
 } from '@devexpress/dx-react-scheduler-material-ui';
 import { ViewState, EditingState } from '@devexpress/dx-react-scheduler';
 import { format } from 'date-fns';
+import { ja } from 'date-fns/locale';
 
 interface GanttChartProps {
   tasks: Task[];
@@ -19,22 +20,21 @@ interface GanttChartProps {
 const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
   const [appointments, setAppointments] = useState<any[]>([]);
   const currentDate = new Date();
-  const startDate = new Date(currentDate.getFullYear(), 0, 1); // 年初
-  const endDate = new Date(currentDate.getFullYear(), 11, 31); // 年末
+  const startDate = new Date(currentDate.getFullYear(), 0, 1);
+  const endDate = new Date(currentDate.getFullYear(), 11, 31);
 
   useEffect(() => {
-    // タスクをスケジューラーの形式に変換
     const convertedAppointments = tasks.map(task => ({
       id: task.id,
       title: task.title,
       startDate: task.startDate,
       endDate: task.endDate,
-      color: task.color,
+      color: task.color || '#1EAEDB',
     }));
     setAppointments(convertedAppointments);
   }, [tasks]);
 
-  const onCommitChanges = ({ added, changed, deleted }: any) => {
+  const onCommitChanges = ({ changed, deleted }: any) => {
     if (changed) {
       const taskId = Object.keys(changed)[0];
       const changedTask = changed[taskId];
@@ -59,6 +59,10 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
           ...style,
           backgroundColor: data.color,
           borderRadius: '4px',
+          padding: '4px 8px',
+          fontSize: '14px',
+          cursor: 'pointer',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
         }}
       >
         {children}
@@ -66,21 +70,56 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
     );
   };
 
+  const TimeTableCell = ({ ...restProps }: any) => {
+    return (
+      <MonthView.TimeTableCell
+        {...restProps}
+        style={{
+          height: '80px',
+          borderRight: '1px solid #e5e7eb',
+          backgroundColor: 'white',
+        }}
+      />
+    );
+  };
+
+  const DayScaleCell = ({ ...restProps }: any) => {
+    const date = new Date(restProps.startDate);
+    const monthName = format(date, 'M月', { locale: ja });
+    
+    return (
+      <MonthView.DayScaleCell
+        {...restProps}
+        style={{
+          textAlign: 'center',
+          padding: '8px',
+          borderBottom: '1px solid #e5e7eb',
+          borderRight: '1px solid #e5e7eb',
+          backgroundColor: 'white',
+          color: '#374151',
+          fontWeight: 500,
+        }}
+      >
+        {monthName}
+      </MonthView.DayScaleCell>
+    );
+  };
+
   return (
     <div className="h-[600px] bg-white rounded-lg shadow">
       <Scheduler 
         data={appointments}
+        locale="ja-JP"
         firstDayOfWeek={1}
       >
         <ViewState 
           defaultCurrentDate={startDate}
         />
         <EditingState onCommitChanges={onCommitChanges} />
-        <WeekView
-          startDayHour={0}
-          endDayHour={24}
-          cellDuration={1440}
-          intervalCount={52}
+        <MonthView
+          intervalCount={12}
+          dayScaleCellComponent={DayScaleCell}
+          timeTableCellComponent={TimeTableCell}
         />
         <EditRecurrenceMenu />
         <Appointments appointmentComponent={Appointment} />
