@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react';
 import { Task } from '../types/task';
 import {
   Scheduler,
-  DayView,
+  WeekView,
   Appointments,
   DragDropProvider,
   EditRecurrenceMenu,
   AllDayPanel,
+  MonthView,
 } from '@devexpress/dx-react-scheduler-material-ui';
 import { ViewState, EditingState } from '@devexpress/dx-react-scheduler';
 import { format } from 'date-fns';
@@ -18,6 +19,9 @@ interface GanttChartProps {
 
 const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
   const [appointments, setAppointments] = useState<any[]>([]);
+  const currentDate = new Date();
+  const startDate = new Date(currentDate.getFullYear(), 0, 1); // 年初
+  const endDate = new Date(currentDate.getFullYear(), 11, 31); // 年末
 
   useEffect(() => {
     // タスクをスケジューラーの形式に変換
@@ -64,14 +68,17 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
   };
 
   return (
-    <div className="h-[400px] bg-white rounded-lg shadow">
-      <Scheduler data={appointments}>
-        <ViewState />
+    <div className="h-[600px] bg-white rounded-lg shadow">
+      <Scheduler 
+        data={appointments}
+        firstDayOfWeek={1}
+      >
+        <ViewState 
+          defaultCurrentDate={currentDate}
+        />
         <EditingState onCommitChanges={onCommitChanges} />
-        <DayView
-          startDayHour={0}
-          endDayHour={24}
-          cellDuration={60}
+        <MonthView
+          intervalCount={12}
         />
         <EditRecurrenceMenu />
         <Appointments appointmentComponent={Appointment} />
