@@ -2,12 +2,17 @@ import { useState } from 'react';
 import GanttChart from '../components/GanttChart';
 import TaskForm from '../components/TaskForm';
 import { Task } from '../types/task';
+import { getNextColor } from '../utils/colors';
 
 const Index = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
 
   const handleAddTask = (task: Task) => {
-    setTasks([...tasks, task]);
+    const taskWithColor = {
+      ...task,
+      color: getNextColor(),
+    };
+    setTasks([...tasks, taskWithColor]);
   };
 
   const handleUpdateTask = (updatedTask: Task) => {
@@ -24,12 +29,10 @@ const Index = () => {
           <TaskForm onSubmit={handleAddTask} />
         </div>
         <div className="lg:col-span-3">
-          <div className="bg-white rounded-lg shadow-lg p-4">
-            <GanttChart 
-              tasks={tasks} 
-              onTaskUpdate={handleUpdateTask}
-            />
-          </div>
+          <GanttChart 
+            tasks={tasks} 
+            onTaskUpdate={handleUpdateTask}
+          />
         </div>
       </div>
     </div>

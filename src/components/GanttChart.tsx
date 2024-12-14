@@ -2,6 +2,12 @@ import { useEffect, useState } from 'react';
 import { Task } from '../types/task';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface GanttChartProps {
   tasks: Task[];
@@ -147,28 +153,39 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
             {tasks.map((task, index) => {
               const position = calculateTaskPosition(task);
               return (
-                <div
-                  key={task.id}
-                  className="gantt-task absolute h-8 rounded group"
-                  style={{
-                    ...position,
-                    top: `${index * 48}px`,
-                    backgroundColor: task.color || '#1EAEDB',
-                  }}
-                  onMouseDown={(e) => handleTaskDrag(task.id, e)}
-                >
-                  <div
-                    className="absolute left-0 top-0 w-1 h-full cursor-ew-resize opacity-0 group-hover:opacity-100 bg-black/20"
-                    onMouseDown={(e) => handleResize(task.id, 'left', e)}
-                  />
-                  <div
-                    className="absolute right-0 top-0 w-1 h-full cursor-ew-resize opacity-0 group-hover:opacity-100 bg-black/20"
-                    onMouseDown={(e) => handleResize(task.id, 'right', e)}
-                  />
-                  <span className="px-2 text-white whitespace-nowrap overflow-hidden text-sm">
-                    {task.title}
-                  </span>
-                </div>
+                <TooltipProvider key={task.id}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div
+                        className="gantt-task absolute h-8 rounded group"
+                        style={{
+                          ...position,
+                          top: `${index * 48}px`,
+                          backgroundColor: task.color,
+                        }}
+                        onMouseDown={(e) => handleTaskDrag(task.id, e)}
+                      >
+                        <div
+                          className="absolute left-0 top-0 w-1 h-full cursor-ew-resize opacity-0 group-hover:opacity-100 bg-black/20"
+                          onMouseDown={(e) => handleResize(task.id, 'left', e)}
+                        />
+                        <div
+                          className="absolute right-0 top-0 w-1 h-full cursor-ew-resize opacity-0 group-hover:opacity-100 bg-black/20"
+                          onMouseDown={(e) => handleResize(task.id, 'right', e)}
+                        />
+                        <span className="px-2 text-white whitespace-nowrap overflow-hidden text-sm">
+                          {task.title}
+                        </span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <div className="text-sm">
+                        <div>開始: {format(task.startDate, 'yyyy/MM/dd', { locale: ja })}</div>
+                        <div>終了: {format(task.endDate, 'yyyy/MM/dd', { locale: ja })}</div>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               );
             })}
           </div>

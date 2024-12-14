@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Task } from '../types/task';
+import { format } from 'date-fns';
 
 interface TaskFormProps {
   onSubmit: (task: Task) => void;
@@ -9,17 +10,22 @@ const TaskForm = ({ onSubmit }: TaskFormProps) => {
   const [title, setTitle] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [color, setColor] = useState('#0EA5E9');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Set time to 00:00 for both dates
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    
+    const end = new Date(endDate);
+    end.setHours(0, 0, 0, 0);
+
     const task: Task = {
       id: crypto.randomUUID(),
       title,
-      startDate: new Date(startDate),
-      endDate: new Date(endDate),
-      color,
+      startDate: start,
+      endDate: end,
     };
 
     onSubmit(task);
@@ -50,7 +56,7 @@ const TaskForm = ({ onSubmit }: TaskFormProps) => {
           開始日時
         </label>
         <input
-          type="datetime-local"
+          type="date"
           value={startDate}
           onChange={(e) => setStartDate(e.target.value)}
           className="task-input"
@@ -63,23 +69,11 @@ const TaskForm = ({ onSubmit }: TaskFormProps) => {
           終了日時
         </label>
         <input
-          type="datetime-local"
+          type="date"
           value={endDate}
           onChange={(e) => setEndDate(e.target.value)}
           className="task-input"
           required
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          色
-        </label>
-        <input
-          type="color"
-          value={color}
-          onChange={(e) => setColor(e.target.value)}
-          className="w-full h-10 p-1 rounded cursor-pointer"
         />
       </div>
 
