@@ -1,14 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Task } from '../types/task';
-import {
-  Scheduler,
-  Appointments,
-  DragDropProvider,
-  EditRecurrenceMenu,
-  AllDayPanel,
-  MonthView,
-} from '@devexpress/dx-react-scheduler-material-ui';
-import { ViewState, EditingState } from '@devexpress/dx-react-scheduler';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 
@@ -18,114 +9,108 @@ interface GanttChartProps {
 }
 
 const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
-  const [appointments, setAppointments] = useState<any[]>([]);
   const currentDate = new Date();
   const startDate = new Date(currentDate.getFullYear(), 0, 1);
   const endDate = new Date(currentDate.getFullYear(), 11, 31);
+  const months = Array.from({ length: 12 }, (_, i) => new Date(currentDate.getFullYear(), i, 1));
 
-  useEffect(() => {
-    const convertedAppointments = tasks.map(task => ({
-      id: task.id,
-      title: task.title,
-      startDate: task.startDate,
-      endDate: task.endDate,
-      color: task.color || '#1EAEDB',
-    }));
-    setAppointments(convertedAppointments);
-  }, [tasks]);
-
-  const onCommitChanges = ({ changed, deleted }: any) => {
-    if (changed) {
-      const taskId = Object.keys(changed)[0];
-      const changedTask = changed[taskId];
-      const originalTask = tasks.find(t => t.id === taskId);
-      
-      if (originalTask && changedTask) {
-        onTaskUpdate({
-          ...originalTask,
-          startDate: changedTask.startDate || originalTask.startDate,
-          endDate: changedTask.endDate || originalTask.endDate,
-        });
-      }
-    }
-  };
-
-  const Appointment = ({ children, style, ...restProps }: any) => {
-    const { data } = restProps;
-    return (
-      <Appointments.Appointment
-        {...restProps}
-        style={{
-          ...style,
-          backgroundColor: data.color,
-          borderRadius: '4px',
-          padding: '4px 8px',
-          fontSize: '14px',
-          cursor: 'pointer',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-        }}
-      >
-        {children}
-      </Appointments.Appointment>
-    );
-  };
-
-  const TimeTableCell = ({ ...restProps }: any) => {
-    return (
-      <MonthView.TimeTableCell
-        {...restProps}
-        style={{
-          height: '80px',
-          borderRight: '1px solid #e5e7eb',
-          backgroundColor: 'white',
-        }}
-      />
-    );
-  };
-
-  const DayScaleCell = ({ ...restProps }: any) => {
-    const date = new Date(restProps.startDate);
-    const monthName = format(date, 'M月', { locale: ja });
+  const calculateTaskPosition = (task: Task) => {
+    const totalDays = 365;
+    const startDayOfYear = Math.floor((task.startDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const endDayOfYear = Math.floor((task.endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
     
-    return (
-      <MonthView.DayScaleCell
-        {...restProps}
-        style={{
-          textAlign: 'center',
-          padding: '8px',
-          borderBottom: '1px solid #e5e7eb',
-          borderRight: '1px solid #e5e7eb',
-          backgroundColor: 'white',
-          color: '#374151',
-          fontWeight: 500,
-        }}
-      >
-        {monthName}
-      </MonthView.DayScaleCell>
-    );
+    const left = (startDayOfYear / totalDays) * 100;
+    const width = ((endDayOfYear - startDayOfYear) / totalDays) * 100;
+    
+    return { left: `${left}%`, width: `${width}%` };
+  };
+
+  const handleTaskDrag = (taskId: string, e: React.MouseEvent<HTMLDivElement>) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    const container = e.currentTarget.parentElement;
+    if (!container) return;
+
+    const startX = e.clientX;
+    const startLeft = e.currentTarget.offsetLeft;
+    const containerWidth = container.clientWidth;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const deltaX = moveEvent.clientX - startX;
+      const newLeft = Math.max(0, Math.min(containerWidth - e.currentTarget.offsetWidth, startLeft + deltaX));
+      const daysFromStart = Math.floor((newLeft / containerWidth) * 365);
+      
+      const newStartDate = new Date(startDate.getTime() + daysFromStart * 24 * 60 * 60 * 1000);
+      const duration = task.endDate.getTime() - task.startDate.getTime();
+      const newEndDate = new Date(newStartDate.getTime() + duration);
+
+      onTaskUpdate({
+        ...task,
+        startDate: newStartDate,
+        endDate: newEndDate,
+      });
+    };
+
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
   };
 
   return (
-    <div className="h-[600px] bg-white rounded-lg shadow">
-      <Scheduler 
-        data={appointments}
-        locale="ja-JP"
-        firstDayOfWeek={1}
-      >
-        <ViewState 
-          defaultCurrentDate={startDate}
-        />
-        <EditingState onCommitChanges={onCommitChanges} />
-        <MonthView
-          intervalCount={12}
-          dayScaleCellComponent={DayScaleCell}
-          timeTableCellComponent={TimeTableCell}
-        />
-        <EditRecurrenceMenu />
-        <Appointments appointmentComponent={Appointment} />
-        <AllDayPanel />
-        <DragDropProvider />
-      </Scheduler>
+    <div className="h-[600px] bg-white rounded-lg shadow p-4">
+      <div className="relative h-full">
+        {/* Month Headers */}
+        <div className="flex border-b border-gray-200">
+          {months.map((month) => (
+            <div
+              key={month.getTime()}
+              className="flex-1 month-header"
+            >
+              {format(month, 'M月', { locale: ja })}
+            </div>
+          ))}
+        </div>
+
+        {/* Grid Lines */}
+        <div className="relative h-[calc(100%-2rem)] mt-2">
+          <div className="absolute inset-0 flex">
+            {months.map((month, index) => (
+              <div
+                key={month.getTime()}
+                className="flex-1 gantt-grid"
+              />
+            ))}
+          </div>
+
+          {/* Tasks */}
+          <div className="absolute inset-0">
+            {tasks.map((task, index) => {
+              const position = calculateTaskPosition(task);
+              return (
+                <div
+                  key={task.id}
+                  className="gantt-task absolute h-8 rounded"
+                  style={{
+                    ...position,
+                    top: `${index * 48}px`,
+                    backgroundColor: task.color || '#1EAEDB',
+                  }}
+                  onMouseDown={(e) => handleTaskDrag(task.id, e)}
+                >
+                  <span className="px-2 text-white whitespace-nowrap overflow-hidden text-sm">
+                    {task.title}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
