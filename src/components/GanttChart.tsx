@@ -34,6 +34,13 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
   // 年度選択のオプションを生成（現在年から前後5年）
   const yearOptions = Array.from({ length: 11 }, (_, i) => currentYear - 5 + i);
 
+  // 選択された年度内に収まるタスクのみをフィルタリング
+  const filteredTasks = tasks.filter(task => {
+    const taskStartYear = task.startDate.getFullYear();
+    const taskEndYear = task.endDate.getFullYear();
+    return taskStartYear === selectedYear || taskEndYear === selectedYear;
+  });
+
   const calculateTaskPosition = (task: Task) => {
     const totalDays = 365;
     const taskStartDate = new Date(Math.max(task.startDate.getTime(), startDate.getTime()));
@@ -192,7 +199,7 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
 
           {/* Tasks */}
           <div className="absolute inset-0">
-            {tasks.map((task, index) => {
+            {filteredTasks.map((task, index) => {
               const position = calculateTaskPosition(task);
               const isActive = task.id === activeTaskId;
               return (
