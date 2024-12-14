@@ -30,11 +30,10 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
+  const [resizeTooltipContent, setResizeTooltipContent] = useState<{ startDate: Date; endDate: Date } | null>(null);
 
-  // 年度選択のオプションを生成（現在年から前後5年）
   const yearOptions = Array.from({ length: 11 }, (_, i) => currentYear - 5 + i);
 
-  // 選択された年度内に収まるタスクのみをフィルタリング
   const filteredTasks = tasks.filter(task => {
     const taskStartYear = task.startDate.getFullYear();
     const taskEndYear = task.endDate.getFullYear();
@@ -136,6 +135,8 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
         newEndDate = task.endDate;
       }
 
+      setResizeTooltipContent({ startDate: newStartDate, endDate: newEndDate });
+
       onTaskUpdate({
         ...task,
         startDate: newStartDate,
@@ -146,6 +147,7 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
     const handleMouseUp = () => {
       setIsResizing(false);
       setActiveTaskId(null);
+      setResizeTooltipContent(null);
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
@@ -204,7 +206,7 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
               const isActive = task.id === activeTaskId;
               return (
                 <TooltipProvider key={task.id}>
-                  <Tooltip>
+                  <Tooltip open={isResizing && isActive ? true : undefined}>
                     <TooltipTrigger asChild>
                       <div
                         className="gantt-task absolute h-8 rounded group"
@@ -230,8 +232,8 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
                     </TooltipTrigger>
                     <TooltipContent>
                       <div className="text-sm">
-                        <div>開始: {format(task.startDate, 'yyyy/MM/dd', { locale: ja })}</div>
-                        <div>終了: {format(task.endDate, 'yyyy/MM/dd', { locale: ja })}</div>
+                        <div>開始: {format(resizeTooltipContent?.startDate || task.startDate, 'yyyy/MM/dd', { locale: ja })}</div>
+                        <div>終了: {format(resizeTooltipContent?.endDate || task.endDate, 'yyyy/MM/dd', { locale: ja })}</div>
                       </div>
                     </TooltipContent>
                   </Tooltip>
