@@ -36,8 +36,11 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
 
   const calculateTaskPosition = (task: Task) => {
     const totalDays = 365;
-    const startDayOfYear = Math.floor((task.startDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    const endDayOfYear = Math.floor((task.endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const taskStartDate = new Date(Math.max(task.startDate.getTime(), startDate.getTime()));
+    const taskEndDate = new Date(Math.min(task.endDate.getTime(), endDate.getTime()));
+    
+    const startDayOfYear = Math.floor((taskStartDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const endDayOfYear = Math.floor((taskEndDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
     
     const left = (startDayOfYear / totalDays) * 100;
     const width = ((endDayOfYear - startDayOfYear) / totalDays) * 100;
@@ -194,7 +197,7 @@ const GanttChart = ({ tasks, onTaskUpdate }: GanttChartProps) => {
               const isActive = task.id === activeTaskId;
               return (
                 <TooltipProvider key={task.id}>
-                  <Tooltip open={isActive && (isDragging || isResizing)}>
+                  <Tooltip>
                     <TooltipTrigger asChild>
                       <div
                         className="gantt-task absolute h-8 rounded group"
